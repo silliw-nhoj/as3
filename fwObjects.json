@@ -1,0 +1,32 @@
+"{{app_name}}_fwAllowedTcpPortList": {
+  "class": "Firewall_Port_List",
+  "ports": [
+    22,
+    53,
+    80,
+    443,
+    "8080-8081"
+  ]
+},
+"{{app_name}}_fwAllowedUdpPortList": {
+  "class": "Firewall_Port_List",
+  "ports": [
+    53,
+    514,
+    9514
+  ]
+},
+"{{app_name}}_fwAllowedAddressList": {
+  "class": "Firewall_Address_List",
+  "addresses": [
+    "10.1.10.0/24",
+    "10.1.20.0/24",
+    "10.1.30.0/24"
+  ]
+},
+"fwDefaultDenyAddressList": {
+  "class": "Firewall_Address_List",
+  "addresses": [
+    "0.0.0.0/0"
+  ]
+}
