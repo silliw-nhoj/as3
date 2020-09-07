@@ -5,34 +5,98 @@
   "declaration": {
     "class": "ADC",
     "schemaVersion": "3.0.0",
-    "id": "urn:uuid:33045210-3ab8-4636-9b2a-c98d22ab915d",
     "label": "example_vs",
-    "remark": "Simple HTTP application with RR pool",
-    "example_vs": {
+    "Common": {
       "class": "Tenant",
-      "A1": {
+      "web_app1": {
         "class": "Application",
-        "template": "http",
+        "template": "https",
         "serviceMain": {
-          "class": "Service_HTTP",
+          "class": "Service_HTTPS",
           "virtualAddresses": [
-            "10.1.10.0/24"
+            { "use": "serviceAddress" }
           ],
-          "pool": "web_pool"
+          "virtualPort": 443,
+          "pool": "web_app1_web_pool",
+          "policyWAF": {
+            "use": "web_app1_waf_policy"
+          },
+          "securityLogProfiles": [ 
+            {
+              "use": "secLogRemote"
+            },
+            {
+              "bigip": "/Common/Log illegal requests"
+            }
+          ],
+          "serverTLS": "web_app1_client_ssl",
+          "profileHTTP": {
+            "use": "http_profile_xff"
+          }
         },
-        "web_pool": {
+        "serviceAddress":{
+          "class":"Service_Address",
+          "virtualAddress":"10.0.0.0/8",
+          "arpEnabled":true,
+          "icmpEcho":"enable",
+          "routeAdvertisement":"enable",
+          "spanningEnabled":false,
+          "trafficGroup":"default"
+        },
+        "web_app1_web_pool": {
           "class": "Pool",
+          "loadBalancingMode": "predictive-node",
           "monitors": [
             "http"
           ],
           "members": [
             {
-              "servicePort": 80,
+              "servicePort": 8080,
               "addressDiscovery": "fqdn",
               "autoPopulate": true,
-              "hostname": "www.example.com"
+              "queryInterval": 10,
+              "hostname": "aws-demo-svr-1a.silliw-nhoj.com"
             }
           ]
+        },
+        "web_app1_client_ssl": {
+          "class": "TLS_Server",
+          "certificates": [
+            {
+              "certificate": "web_app1_cert"
+            }
+          ]
+        },
+        "http_profile_xff": {
+          "class": "HTTP_Profile",
+          "xForwardedFor": true
+        },
+        "web_app1_cert": {
+          "class": "Certificate",
+          "remark": "in practice we recommend using a passphrase",
+          "certificate": "-----BEGIN CERTIFICATE-----\nMIIDxjCCAq6gAwIBAgIGAXDG8eQqMA0GCSqGSIb3DQEBDQUAMIGTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTERMA8GA1UEBxMIU2FuIEpvc2UxFDASBgNVBAoTC2V4YW1wbGUuY29tMQwwCgYDVQQLEwNkZXYxGDAWBgNVBAMTD3d3dy5leGFtcGxlLmNvbTEeMBwGCSqGSIb3DQEJARYPai53aWxsaXNAZjUuY29tMB4XDTIwMDMxMTAwMTUwNloXDTMwMDMwOTAxMTUwNlowgZMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMREwDwYDVQQHEwhTYW4gSm9zZTEUMBIGA1UEChMLZXhhbXBsZS5jb20xDDAKBgNVBAsTA2RldjEYMBYGA1UEAxMPd3d3LmV4YW1wbGUuY29tMR4wHAYJKoZIhvcNAQkBFg9qLndpbGxpc0BmNS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCGrl+Pr06Zzanrb8ASYs8gGweDxIYsJiESafbd4n+iosR40Ennce8VCvIRCPIXXoWbS1GVQHmE7sfw2vxsBwoAQnjQjOrWhzOueCFUFDl1D6h7E3prEGS0T/3Ld8rdrkFk2jENGdrC9Nw04BB9EPaqkFsis2WwNrQ9Qf0XwzZzrXdFowMzngWkVBf3IDbq3bhh9GNea+Qn/w+amzfZS1VGxan/61b6i/ZexsFWzuu8sqToIt20QtEMSVW2YP+feIU7GmUbzp6og+e+47QqA0ZloE+EJeqfs0TozAtOJt+1kefG40Cy5jnxpLvPsfS4L+Qs9O77IWPCPPapQ7SET+aHAgMBAAGjHjAcMBoGA1UdEQQTMBGBD2oud2lsbGlzQGY1LmNvbTANBgkqhkiG9w0BAQ0FAAOCAQEAK7VDhKgl5spKxIEdDA1KpQORb7TdX652OWRaSwu3natDEj298jmpyaeObqNFqbw0YmT7b6pzfF7s+rL3o8rb+GgDnMekKCm4nHKUl1ly8RDjPHpQJbShiIPano/uwDfwgycJNin7uy+/C4ntUm5QhpcwUoB9TwAaM2Ioy4F2cwI/iDNNjBSyOkGMKB3Z85OillVCXZgl8DjAWPaHuT336xrYRAjq0Bb4GJxn3g7vRJt+M1b9yIiGurKZhEhY10Z+eYZ0GXZoycQChaXY1X8t65FHKefYEP9f2tGmE/Xj0/niPPvuPqCEIc1kwPvFqo6PXe4xVj0rmR4SwifY64K/oA==\n-----END CERTIFICATE-----",
+          "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKCAQEAhq5fj69Omc2p62/AEmLPIBsHg8SGLCYhEmn23eJ/oqLEeNBJ53HvFQryEQjyF16Fm0tRlUB5hO7H8Nr8bAcKAEJ40Izq1oczrnghVBQ5dQ+oexN6axBktE/9y3fK3a5BZNoxDRnawvTcNOAQfRD2qpBbIrNlsDa0PUH9F8M2c613RaMDM54FpFQX9yA26t24YfRjXmvkJ/8Pmps32UtVRsWp/+tW+ov2XsbBVs7rvLKk6CLdtELRDElVtmD/n3iFOxplG86eqIPnvuO0KgNGZaBPhCXqn7NE6MwLTibftZHnxuNAsuY58aS7z7H0uC/kLPTu+yFjwjz2qUO0hE/mhwIDAQABAoIBAB+CA9E1jgnlV29BAYpLm3FDYYquG0WQ1gPczmgyaPG/an9pGyEOQoSFvwPFN/3HmzIteLSWFNfIlPYABTWwn+JXqrP/g6EUmD6k1Ac7hAWi2COS9vy9JRIZ9KH5MHiUH7Bca0VJWyho6GtmT/UyVsKoaum/VnbXFWuPWIqKnN6Ky4A/F7A1AYdN+ok/vlVJGkdpIfozVUWuunE8oqahuXlzBh74T4UJHxazN+yCbM7qBvgToMTtzYovlYxlg+0H21/esYgpcu8UQNgOj1NLcJxEjtiEoHlvxICwndo8VZodaE1kbhX3/RWLE/KLSSM99XhRVenD60rpimM1hZh6xiECgYEAwJbIReMg6xsiz4A/C5pF8GOFiUnqnxaXXyirvPAZO6ZkRN4gGPHC2pcTb3Afh7SU5m1uX94/Ypaa8e0GJ5YogY5ClNYS9HusYm1nmWJDBU1+oFYRClgkqG83Gzz/fihlGAHFrAbePu4h7TVqikua/jgJ35vXxCh15DLBvPMy4usCgYEAswaSNVhKlSd9Qe6X1620kwWn7suvB1aqJEG6yTL9mkZXYkspgYjxHNoHXNvkmV+PyYfz3BCtbv6DDG14ObSPymARj+hQJobArjAIo0PMNgMj+EucX4s1rve59n9zp/jr2le0MoUPE27FPJN6tuvlO5u1dV+GLtCHvCjmq6lrC9UCgYBN/cHk63HtQ/P47Aqb/EHOc78kNdbZziBG3QWPYfwV9/ArI3kEIQOz2fJ48oMSRcL2/eHw2OP6XNsqlb4kUd7deGrmMztB3sOUqJGHwA88GoHpFHGaKs/NlhxO34jn4hvueOlAHRfrjCwZD8SxdKSzxqXY9BeQzIHRg+yJREObOQKBgCW/CvDIbuFH9DcEkWteKqadGK1WsM7BTRpb6YAmiiYPErmc02GGeB/3MHo5utdDuNNrINWThp3Sd9sU8bZpBbBL1SgceVnGK7YOVqPl1ZbFzr25Y30ZovYDMWhxsvcFmuTsfQfx2h3kyx1ckxEiZ7DLwdS/kVEpkpTvosMq83EJAoGASkgDlDQSjUeCFaHoA/6rbKg3bsvYcsW+RS9WcmlJ4e3uTwDb7Gfn7KZL2v8gSHklR0csCci8DC8zlMTXcQm4SM7XEaVTTJntE1+kDdOvqJBuKLxISv41nur7M6y8hup8vSzVTCXVg9N6vJm5wtpO5NHdebSZybugyAXVen4s2gE=\n-----END RSA PRIVATE KEY-----"
+        },
+        "web_app1_waf_policy": {
+          "class": "WAF_Policy",
+          "url": "https://github.com/f5devcentral/f5-asm-policy-templates/raw/master/owasp_ready_template/owasp-auto-tune-v1.1.xml",
+          "ignoreChanges": true
+        },
+        "secLogRemote": {
+          "class": "Security_Log_Profile",
+          "application": {
+            "localStorage": false,
+            "maxEntryLength": "2k",
+            "protocol": "tcp",
+            "remoteStorage": "bigiq",
+            "reportAnomaliesEnabled": true,
+            "servers": [
+              {
+                "address": "10.1.10.6",
+                "port": "8514"
+              }
+            ]
+          }
         }
       }
     }
