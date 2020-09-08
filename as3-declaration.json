@@ -50,7 +50,7 @@
           ],
           "members": [
             {
-              "servicePort": 8080,
+              "servicePort": 8443,
               "addressDiscovery": "fqdn",
               "autoPopulate": true,
               "queryInterval": 10,
