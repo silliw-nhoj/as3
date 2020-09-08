@@ -29,6 +29,7 @@
             }
           ],
           "serverTLS": "web_app1_client_ssl",
+          "clientTLS": {"bigip":"/Common/serverssl"},
           "profileHTTP": {
             "use": "http_profile_xff"
           }
